@@ -23,6 +23,15 @@ Perfect for athletes following structured training programs that provide weekly 
 - Equipment requirements
 - Training phases and weekly progression
 
+## 📱 Use at the Gym
+
+**Want to access this on your phone at the gym?** Check out **[DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment instructions!
+
+Quick options:
+- 🚂 **Railway** - Deploy both frontend & backend in 5 minutes (free tier)
+- ▲ **Vercel + Render** - Split deployment (completely free)
+- 🏠 Add to your phone's home screen for app-like experience
+
 ## 🛠️ Tech Stack
 
 ### Frontend
