@@ -10,9 +10,11 @@ import {
   getWorkouts, 
   getWorkoutById, 
   deleteWorkout,
+  insertExercise,
   insertWorkoutSession,
-  getWorkoutSessions 
-} from './db/database.js';
+  getWorkoutSessionsByWorkoutId,
+  supabase,
+} from './db/supabase.js';
 import { parsePDF } from './utils/pdfParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +26,32 @@ const PORT = 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Authentication middleware - extracts user from JWT token
+async function authenticateUser(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' });
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Attach user to request object
+    (req as any).user = user;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+}
 
 // Setup multer for file uploads
 const uploadDir = join(__dirname, '../uploads');
@@ -56,10 +84,11 @@ const upload = multer({
 
 // === API Routes ===
 
-// Get all workouts
-app.get('/api/workouts', (_req, res) => {
+// Get all workouts (protected route)
+app.get('/api/workouts', authenticateUser, async (req, res) => {
   try {
-    const workouts = getWorkouts();
+    const userId = (req as any).user.id;
+    const workouts = await getWorkouts(userId);
     res.json(workouts);
   } catch (error) {
     console.error('Error fetching workouts:', error);
@@ -67,10 +96,11 @@ app.get('/api/workouts', (_req, res) => {
   }
 });
 
-// Get workout by ID
-app.get('/api/workouts/:id', (req, res) => {
+// Get workout by ID (protected route)
+app.get('/api/workouts/:id', authenticateUser, async (req, res) => {
   try {
-    const workout = getWorkoutById(req.params.id);
+    const userId = (req as any).user.id;
+    const workout = await getWorkoutById(req.params.id, userId);
     
     if (!workout) {
       return res.status(404).json({ error: 'Workout not found' });
@@ -83,9 +113,10 @@ app.get('/api/workouts/:id', (req, res) => {
   }
 });
 
-// Create or update workout
-app.post('/api/workouts', (req, res) => {
+// Create or update workout (protected route)
+app.post('/api/workouts', authenticateUser, async (req, res) => {
   try {
+    const userId = (req as any).user.id;
     const workout = req.body as Workout;
     
     // Validate workout
@@ -95,13 +126,18 @@ app.post('/api/workouts', (req, res) => {
     
     // Delete existing workout if updating
     try {
-      deleteWorkout(workout.id);
+      await deleteWorkout(workout.id, userId);
     } catch {
       // Workout doesn't exist yet, that's fine
     }
     
     // Insert new workout
-    insertWorkout(workout);
+    await insertWorkout(workout, userId);
+    
+    // Insert exercises
+    for (const exercise of workout.exercises) {
+      await insertExercise(exercise, workout.id, userId);
+    }
     
     res.json({ message: 'Workout saved successfully', workout });
   } catch (error) {
@@ -110,10 +146,11 @@ app.post('/api/workouts', (req, res) => {
   }
 });
 
-// Delete workout
-app.delete('/api/workouts/:id', (req, res) => {
+// Delete workout (protected route)
+app.delete('/api/workouts/:id', authenticateUser, async (req, res) => {
   try {
-    deleteWorkout(req.params.id);
+    const userId = (req as any).user.id;
+    await deleteWorkout(req.params.id, userId);
     res.json({ message: 'Workout deleted successfully' });
   } catch (error) {
     console.error('Error deleting workout:', error);
@@ -121,10 +158,11 @@ app.delete('/api/workouts/:id', (req, res) => {
   }
 });
 
-// Upload and parse PDF
-app.post('/api/workouts/upload', upload.single('pdf'), async (req, res) => {
+// Upload and parse PDF (protected route)
+app.post('/api/workouts/upload', authenticateUser, upload.single('pdf'), async (req, res) => {
   try {
-    console.log('Upload request received');
+    const userId = (req as any).user.id;
+    console.log('Upload request received for user:', userId);
     
     if (!req.file) {
       console.error('No file in request');
@@ -148,7 +186,12 @@ app.post('/api/workouts/upload', upload.single('pdf'), async (req, res) => {
     // Insert all workouts
     for (const workout of parsedWorkouts) {
       console.log('Inserting workout:', workout.workoutName || workout.fileName);
-      insertWorkout(workout);
+      await insertWorkout(workout, userId);
+      
+      // Insert exercises for this workout
+      for (const exercise of workout.exercises) {
+        await insertExercise(exercise, workout.id, userId);
+      }
     }
 
     console.log(`Successfully created ${parsedWorkouts.length} workouts from PDF`);
@@ -169,10 +212,11 @@ app.post('/api/workouts/upload', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// Get workout sessions
-app.get('/api/workouts/:id/sessions', (req, res) => {
+// Get workout sessions (protected route)
+app.get('/api/workouts/:id/sessions', authenticateUser, async (req, res) => {
   try {
-    const sessions = getWorkoutSessions(req.params.id);
+    const userId = (req as any).user.id;
+    const sessions = await getWorkoutSessionsByWorkoutId(req.params.id, userId);
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching sessions:', error);
@@ -180,9 +224,10 @@ app.get('/api/workouts/:id/sessions', (req, res) => {
   }
 });
 
-// Save workout session
-app.post('/api/sessions', (req, res) => {
+// Save workout session (protected route)
+app.post('/api/sessions', authenticateUser, async (req, res) => {
   try {
+    const userId = (req as any).user.id;
     const { workoutId, date, sessionData } = req.body;
 
     if (!workoutId || !date || !sessionData) {
@@ -197,7 +242,7 @@ app.post('/api/sessions', (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    insertWorkoutSession(session);
+    await insertWorkoutSession(session, userId);
 
     res.json({ message: 'Session saved successfully', session });
   } catch (error) {

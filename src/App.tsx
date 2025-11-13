@@ -1,32 +1,89 @@
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner';
+import type { User } from '@supabase/supabase-js';
 import type { Workout, WorkoutSession } from './types';
 import { WorkoutList } from './pages/WorkoutList';
 import { WorkoutBuilder } from './pages/WorkoutBuilder';
 import { WorkoutTracker } from './pages/WorkoutTracker';
+import { Auth } from './components/Auth';
+import { supabase } from './lib/supabase';
+import { config } from './config';
+import { Button } from './components/ui/button';
 
 type View = 'list' | 'builder' | 'tracker';
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [view, setView] = useState<View>('list');
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Check authentication status on mount
   useEffect(() => {
-    loadWorkouts();
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadWorkouts();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedWorkout) {
+    if (user) {
+      loadWorkouts();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedWorkout && user) {
       loadSessions(selectedWorkout.id);
     }
-  }, [selectedWorkout]);
+  }, [selectedWorkout, user]);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token || ''}`,
+    };
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setWorkouts([]);
+    setSelectedWorkout(null);
+    setSessions([]);
+    toast.success('Logged out successfully');
+  };
 
   const loadWorkouts = async () => {
+    if (!user) return;
+    
     try {
-      const response = await fetch('/api/workouts');
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/workouts`, { headers });
       if (!response.ok) throw new Error('Failed to load workouts');
       
       const data = await response.json();
@@ -40,8 +97,11 @@ export default function App() {
   };
 
   const loadSessions = async (workoutId: string) => {
+    if (!user) return;
+    
     try {
-      const response = await fetch(`/api/workouts/${workoutId}/sessions`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/workouts/${workoutId}/sessions`, { headers });
       if (!response.ok) throw new Error('Failed to load sessions');
       
       const data = await response.json();
@@ -68,10 +128,13 @@ export default function App() {
   };
 
   const handleSaveWorkout = async (workout: Workout) => {
+    if (!user) return;
+    
     try {
-      const response = await fetch('/api/workouts', {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/workouts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(workout)
       });
 
@@ -87,12 +150,20 @@ export default function App() {
   };
 
   const handleUploadPDF = async (file: File) => {
+    if (!user) return;
+    
     try {
       const formData = new FormData();
       formData.append('pdf', file);
 
-      const response = await fetch('/api/workouts/upload', {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${config.apiUrl}/workouts/upload`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
         body: formData
       });
 
@@ -112,11 +183,14 @@ export default function App() {
   };
 
   const handleDeleteWorkout = async (workoutId: string) => {
+    if (!user) return;
     if (!confirm('Are you sure you want to delete this workout?')) return;
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}`, {
-        method: 'DELETE'
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/workouts/${workoutId}`, {
+        method: 'DELETE',
+        headers
       });
 
       if (!response.ok) throw new Error('Failed to delete workout');
@@ -130,12 +204,13 @@ export default function App() {
   };
 
   const handleSaveSession = async (date: string, sessionData: any[]) => {
-    if (!selectedWorkout) return;
+    if (!user || !selectedWorkout) return;
 
     try {
-      const response = await fetch('/api/sessions', {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/sessions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           workoutId: selectedWorkout.id,
           date,
@@ -153,7 +228,7 @@ export default function App() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -164,16 +239,44 @@ export default function App() {
     );
   }
 
+  if (!user) {
+    return (
+      <>
+        <Auth onSuccess={() => checkAuth()} />
+        <Toaster />
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">Loading workouts...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-right" />
       
       <div className="container mx-auto py-8 px-4 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="mb-2">Workout Tracker</h1>
-          <p className="text-muted-foreground">
-            Track your weights, reps, and progress week over week
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="mb-2">Workout Tracker</h1>
+            <p className="text-muted-foreground">
+              Track your weights, reps, and progress week over week
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">{user.email}</span>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         </div>
 
         {view === 'list' && (

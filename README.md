@@ -6,10 +6,13 @@ A personal workout tracking application designed for athletes following structur
 
 ## ✨ Features
 
+- 🔐 **User Authentication**: Secure login/signup powered by Supabase Auth
 - 📄 **Smart PDF Parsing**: Automatically extracts exercises, sets, reps, and workout metadata from PDF files
 - 📋 **Workout Organization**: Filters by program, phase, and week for easy navigation
 - 💪 **Session Tracking**: Log weights and reps for each set with automatic comparison to previous sessions
 - 📊 **Historical Comparison**: See your previous performance right next to your current workout
+- ☁️ **Cloud Database**: All data stored in Supabase - access from any device, anywhere
+- 🔒 **Data Privacy**: Row-level security ensures each user's workouts are completely private
 - 🎨 **Modern UI**: Beautiful, responsive design built with Figma and implemented with Shadcn/ui components
 - 📝 **Exercise Categories**: Workouts are organized by blocks (Warmup, Buy-in, Block 1-4, Cooldown)
 - 🔄 **Session History**: Track all your workout sessions with date stamps
@@ -44,7 +47,7 @@ Quick options:
 ### Backend
 - **Node.js** + **Express**
 - **TypeScript** throughout
-- **SQLite** database (local, zero-config)
+- **Supabase** for database and authentication
 - **pdf-parse** for PDF extraction
 - **multer** for file uploads
 
@@ -54,6 +57,7 @@ Quick options:
 
 - Node.js 18+ installed
 - npm or yarn
+- A Supabase account (free tier available)
 
 ### Installation
 
@@ -68,10 +72,15 @@ cd training_app
 npm install
 ```
 
-3. **Set up the database**
-```bash
-npm run setup-db
-```
+3. **Set up Supabase**
+   
+   **📖 [Follow the complete Supabase Setup Guide](SUPABASE_SETUP.md)**
+   
+   Quick steps:
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Run the SQL schema (`supabase-schema.sql`) in Supabase SQL Editor
+   - Copy `.env.example` to `.env` and add your Supabase credentials
+   - See `SUPABASE_SETUP.md` for detailed instructions
 
 4. **Start the development servers**
 ```bash
