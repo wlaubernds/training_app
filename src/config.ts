@@ -6,10 +6,13 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 export const config = {
   // In development: use Vite proxy (goes to localhost:3001)
-  // In production: use VITE_API_URL env var, or try relative path
+  // In production: MUST use VITE_API_URL env var
   apiUrl: isDevelopment 
     ? '/api'  // Vite proxy handles this
-    : apiUrl || '/api',  // Use env var or assume same domain
+    : apiUrl || (() => {
+        console.error('⚠️ VITE_API_URL is not set! API calls will fail.');
+        return 'https://workout-tracker-api-production.up.railway.app';
+      })(),
   
   // For debugging
   isDevelopment,
@@ -18,8 +21,10 @@ export const config = {
   maxFileSize: 10 * 1024 * 1024, // 10MB
 };
 
-// Log configuration on startup (only in dev)
-if (isDevelopment) {
-  console.log('🔧 App Configuration:', config);
-}
+// Log configuration on startup
+console.log('🔧 App Configuration:', {
+  apiUrl: config.apiUrl,
+  isDevelopment: config.isDevelopment,
+  VITE_API_URL: apiUrl,
+});
 
