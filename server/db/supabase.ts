@@ -1,13 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Workout, Exercise, WorkoutSession } from '../../src/types';
 
-// Initialize Supabase client for server-side use
+// Initialize Supabase client for server-side use with service role key
+// This bypasses RLS, so we must manually check userId in all queries
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('⚠️  Missing Supabase environment variables!');
-  console.error('Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_KEY');
+  console.error('Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+  throw new Error('Missing Supabase configuration');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseServiceKey);

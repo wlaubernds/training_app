@@ -51,6 +51,22 @@ export function WorkoutList({ workouts, onSelectWorkout, onDeleteWorkout, onEdit
     });
   }, [workouts, selectedProgram, selectedPhase, selectedWeek]);
 
+  // Helper function to get day order (Monday = 0, Friday = 4)
+  const getDayOrder = (workoutDay?: string): number => {
+    if (!workoutDay) return 999; // Put workouts without a day at the end
+    const day = workoutDay.toUpperCase();
+    const dayMap: Record<string, number> = {
+      'MONDAY': 0,
+      'TUESDAY': 1,
+      'WEDNESDAY': 2,
+      'THURSDAY': 3,
+      'FRIDAY': 4,
+      'SATURDAY': 5,
+      'SUNDAY': 6
+    };
+    return dayMap[day] ?? 999;
+  };
+
   // Group workouts by week
   const workoutsByWeek = useMemo(() => {
     const grouped = filteredWorkouts.reduce((acc, workout) => {
@@ -61,6 +77,11 @@ export function WorkoutList({ workouts, onSelectWorkout, onDeleteWorkout, onEdit
       acc[week].push(workout);
       return acc;
     }, {} as Record<string, Workout[]>);
+
+    // Sort workouts within each week by day (Monday -> Friday)
+    Object.keys(grouped).forEach(week => {
+      grouped[week].sort((a, b) => getDayOrder(a.workoutDay) - getDayOrder(b.workoutDay));
+    });
 
     return Object.entries(grouped).sort(([a], [b]) => {
       if (a === 'Uncategorized') return 1;

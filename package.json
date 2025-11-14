@@ -8,6 +8,8 @@
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc && vite build",
+    "build:server": "tsc --project tsconfig.server.json",
+    "start": "node --loader tsx server/index.ts",
     "preview": "vite preview",
     "setup-db": "tsx server/db/setup.ts"
   },
@@ -22,6 +24,7 @@
     "clsx": "^2.1.0",
     "cors": "^2.8.5",
     "date-fns": "^3.0.0",
+    "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "lucide-react": "^0.294.0",
     "multer": "^1.4.5-lts.1",

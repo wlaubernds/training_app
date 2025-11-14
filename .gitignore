@@ -30,3 +30,8 @@ dist-ssr
 # Uploads
 uploads/
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
