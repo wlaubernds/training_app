@@ -156,6 +156,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
             <Input
               id="workout-name"
               placeholder="e.g., Upper Body Day 1"
+              maxLength={100}
               value={workoutName}
               onChange={(e) => setWorkoutName(e.target.value)}
             />
@@ -166,6 +167,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
             <Input
               id="workout-day"
               placeholder="e.g., Monday - Hinge/Push"
+              maxLength={50}
               value={workoutDay}
               onChange={(e) => setWorkoutDay(e.target.value)}
             />
@@ -176,6 +178,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
             <Input
               id="program"
               placeholder="Program name"
+              maxLength={100}
               value={program}
               onChange={(e) => setProgram(e.target.value)}
             />
@@ -186,6 +189,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
             <Input
               id="phase"
               placeholder="Phase name"
+              maxLength={100}
               value={phase}
               onChange={(e) => setPhase(e.target.value)}
             />
@@ -196,6 +200,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
             <Input
               id="week"
               placeholder="Week number"
+              maxLength={50}
               value={week}
               onChange={(e) => setWeek(e.target.value)}
             />
@@ -207,6 +212,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
               <Input
                 id="equipment"
                 placeholder="e.g., Barbell"
+                maxLength={50}
                 value={newEquipmentItem}
                 onChange={(e) => setNewEquipmentItem(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddEquipment()}
@@ -306,6 +312,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
                   <Input
                     id="ex-name"
                     placeholder="e.g., Barbell Squat"
+                    maxLength={100}
                     value={newExercise.name}
                     onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })}
                   />
@@ -338,8 +345,19 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
                     id="ex-sets"
                     type="number"
                     min="1"
+                    max="999"
+                    step="1"
                     value={newExercise.sets}
-                    onChange={(e) => setNewExercise({ ...newExercise, sets: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow positive integers, max 999
+                      const parsed = parseInt(value);
+                      if (!isNaN(parsed) && parsed > 0 && parsed <= 999) {
+                        setNewExercise({ ...newExercise, sets: parsed });
+                      } else if (value === '') {
+                        setNewExercise({ ...newExercise, sets: 1 });
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -347,6 +365,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
                   <Input
                     id="ex-reps"
                     placeholder="e.g., 10 or 10-12 or AMRAP"
+                    maxLength={50}
                     value={newExercise.reps}
                     onChange={(e) => setNewExercise({ ...newExercise, reps: e.target.value })}
                   />
@@ -358,6 +377,7 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
                 <Textarea
                   id="ex-notes"
                   placeholder="Any additional notes about this exercise"
+                  maxLength={500}
                   value={newExercise.notes}
                   onChange={(e) => setNewExercise({ ...newExercise, notes: e.target.value })}
                   rows={2}
