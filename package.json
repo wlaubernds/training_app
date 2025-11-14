@@ -9,7 +9,7 @@
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc && vite build",
     "build:server": "tsc --project tsconfig.server.json",
-    "start": "node --loader tsx server/index.ts",
+    "start": "node --import tsx/esm server/index.ts",
     "preview": "vite preview",
     "setup-db": "tsx server/db/setup.ts"
   },
