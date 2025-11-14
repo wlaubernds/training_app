@@ -10,7 +10,7 @@
     "build": "tsc && vite build",
     "build:server": "tsc --project tsconfig.server.json",
     "start": "node --import tsx/esm server/index.ts",
-    "preview": "vite preview",
+    "preview": "vite preview --host",
     "setup-db": "tsx server/db/setup.ts"
   },
   "dependencies": {
