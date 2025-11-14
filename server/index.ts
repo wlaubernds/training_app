@@ -107,6 +107,11 @@ const upload = multer({
 
 // === API Routes ===
 
+// Handle preflight requests for all API routes
+app.options('/api/*', (_req, res) => {
+  res.status(200).end();
+});
+
 // Get all workouts (protected route)
 app.get('/api/workouts', authenticateUser, async (req, res) => {
   try {
@@ -179,6 +184,11 @@ app.delete('/api/workouts/:id', authenticateUser, async (req, res) => {
     console.error('Error deleting workout:', error);
     res.status(500).json({ error: 'Failed to delete workout' });
   }
+});
+
+// Handle preflight for upload endpoint
+app.options('/api/workouts/upload', (_req, res) => {
+  res.status(200).end();
 });
 
 // Upload and parse PDF (protected route)
