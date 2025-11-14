@@ -6,13 +6,14 @@ A personal workout tracking application designed for athletes following structur
 
 ## ✨ Features
 
-- 🔐 **User Authentication**: Secure login/signup powered by Supabase Auth
-- 📄 **Smart PDF Parsing**: Automatically extracts exercises, sets, reps, and workout metadata from PDF files
+- 🔐 **User Authentication**: Secure login/signup with email/password or Google OAuth via Supabase Auth
+- 📄 **Smart PDF Parsing**: Automatically extracts exercises, sets, reps, and workout metadata from PDF files (no AI APIs - completely free!)
 - 📋 **Workout Organization**: Filters by program, phase, and week for easy navigation
-- 💪 **Session Tracking**: Log weights and reps for each set with automatic comparison to previous sessions
+- 💪 **Session Tracking**: Log weights and reps for each set with automatic completion tracking
 - 📊 **Historical Comparison**: See your previous performance right next to your current workout
 - ☁️ **Cloud Database**: All data stored in Supabase - access from any device, anywhere
 - 🔒 **Data Privacy**: Row-level security ensures each user's workouts are completely private
+- ✅ **Input Validation**: Smart form validation prevents data entry errors
 - 🎨 **Modern UI**: Beautiful, responsive design built with Figma and implemented with Shadcn/ui components
 - 📝 **Exercise Categories**: Workouts are organized by blocks (Warmup, Buy-in, Block 1-4, Cooldown)
 - 🔄 **Session History**: Track all your workout sessions with date stamps
@@ -112,7 +113,7 @@ This will start:
    - Enter the weight you used
    - Log reps completed for each set
    - Add optional notes
-   - Mark sets as completed with checkboxes
+   - Sets with data are automatically marked as completed
 4. See your previous session data displayed alongside for comparison
 5. Click **"Save Session"** when done
 
@@ -151,21 +152,23 @@ training-app/
 │   └── index.css                 # Global styles + design system
 ├── server/                       # Express backend
 │   ├── db/
-│   │   ├── setup.ts              # Database schema initialization
-│   │   └── database.ts           # Database queries
+│   │   └── supabase.ts           # Supabase database queries
 │   ├── utils/
 │   │   └── pdfParser.ts          # PDF parsing logic
-│   └── index.ts                  # API server
+│   └── index.ts                  # API server with auth middleware
 ├── uploads/                      # Uploaded PDFs (gitignored)
-├── workouts.db                   # SQLite database (gitignored)
+├── supabase-schema.sql           # Database schema for Supabase
+├── .env                          # Environment variables (gitignored)
 ├── package.json                  # Dependencies and scripts
 └── vite.config.ts                # Vite configuration
 ```
 
 ## 🔌 API Endpoints
 
+All endpoints require authentication via JWT Bearer token from Supabase.
+
 ### Workouts
-- `GET /api/workouts` - Get all workouts
+- `GET /api/workouts` - Get all workouts for authenticated user
 - `GET /api/workouts/:id` - Get single workout with exercises
 - `POST /api/workouts` - Create/update workout
 - `DELETE /api/workouts/:id` - Delete workout
@@ -175,60 +178,68 @@ training-app/
 - `GET /api/workouts/:id/sessions` - Get all sessions for a workout
 - `POST /api/sessions` - Create new workout session
 
+### Health
+- `GET /api/health` - Health check endpoint (public, no auth required)
+
 ## 💾 Database Schema
+
+Supabase PostgreSQL database with Row-Level Security (RLS) enabled for complete data privacy.
 
 ### `workouts`
 ```sql
 - id (TEXT, PRIMARY KEY)
-- file_name (TEXT)
-- upload_date (TEXT)
-- workout_name (TEXT)
-- workout_day (TEXT)
+- fileName (TEXT)
+- uploadDate (TEXT)
+- workoutName (TEXT)
+- workoutDay (TEXT)
 - program (TEXT)
 - phase (TEXT)
 - week (TEXT)
-- equipment (TEXT, JSON array)
-- created_at (TEXT)
+- equipment (TEXT[])  -- Array of strings
+- userId (UUID, FOREIGN KEY)  -- Links to auth.users
 ```
 
 ### `exercises`
 ```sql
 - id (TEXT, PRIMARY KEY)
-- workout_id (TEXT, FOREIGN KEY)
+- workoutId (TEXT, FOREIGN KEY → workouts)
+- userId (UUID, FOREIGN KEY → auth.users)
 - name (TEXT)
 - sets (INTEGER)
 - reps (TEXT)
 - category (TEXT)
 - notes (TEXT)
-- created_at (TEXT)
+- createdAt (TEXT)
 ```
 
 ### `workout_sessions`
 ```sql
 - id (TEXT, PRIMARY KEY)
-- workout_id (TEXT, FOREIGN KEY)
+- workoutId (TEXT, FOREIGN KEY → workouts)
+- userId (UUID, FOREIGN KEY → auth.users)
 - date (TEXT)
-- created_at (TEXT)
+- createdAt (TEXT)
 ```
 
 ### `exercise_sessions`
 ```sql
 - id (TEXT, PRIMARY KEY)
-- session_id (TEXT, FOREIGN KEY)
-- exercise_id (TEXT, FOREIGN KEY)
+- workoutSessionId (TEXT, FOREIGN KEY → workout_sessions)
+- exerciseId (TEXT, FOREIGN KEY → exercises)
 - notes (TEXT)
-- created_at (TEXT)
 ```
 
 ### `set_data`
 ```sql
-- id (INTEGER, PRIMARY KEY)
-- exercise_session_id (TEXT, FOREIGN KEY)
-- set_number (INTEGER)
-- weight (REAL)
+- id (UUID, PRIMARY KEY)
+- exerciseSessionId (TEXT, FOREIGN KEY → exercise_sessions)
+- setNumber (INTEGER)
+- weight (FLOAT)
 - reps (INTEGER)
-- completed (INTEGER, boolean)
+- completed (BOOLEAN)
 ```
+
+**Note**: All tables have RLS policies ensuring users can only access their own data.
 
 ## 🎨 Design System
 
@@ -276,10 +287,11 @@ The parser extracts:
 - [ ] Workout templates for quick creation
 - [ ] Exercise library with form videos
 - [ ] Export data to CSV/PDF
-- [ ] Mobile-responsive improvements
 - [ ] Dark mode support
-- [ ] Multiple user support with authentication
-- [ ] Cloud sync option
+- [ ] Social features (share workouts with friends)
+- [ ] Apple Health / Google Fit integration
+- [ ] Progressive Web App (PWA) support for offline use
+- [ ] Workout reminders and scheduling
 
 ## 🤝 Contributing
 
