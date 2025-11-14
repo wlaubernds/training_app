@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Checkbox } from '../components/ui/checkbox';
-import type { Workout, WorkoutSession, ExerciseSession, SetData } from '../types';
+import type { Workout, WorkoutSession, ExerciseSession } from '../types';
 
 interface WorkoutTrackerProps {
   workout: Workout;
