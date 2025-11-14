@@ -27,7 +27,9 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://workout-tracker-web-production-0e1e.up.railway.app'
+  'https://workout-tracker-web-production-0e1e.up.railway.app',
+  // Allow all Railway subdomains for flexibility
+  /https:\/\/.*\.railway\.app$/
 ];
 
 // Request logging middleware
@@ -47,7 +49,17 @@ app.use(cors({
       return callback(null, true);
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin matches any allowed origin (string or regex)
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
       console.log('✅ CORS allowed for origin:', origin);
       callback(null, true);
     } else {

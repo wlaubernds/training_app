@@ -11,7 +11,7 @@ export const config = {
     ? '/api'  // Vite proxy handles this
     : apiUrl || (() => {
         console.error('⚠️ VITE_API_URL is not set! API calls will fail.');
-        return 'https://workout-tracker-api-production.up.railway.app';
+        return 'https://workout-tracker-api-production-6816.up.railway.app';
       })(),
   
   // For debugging
