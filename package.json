@@ -11,6 +11,7 @@
     "build:server": "tsc --project tsconfig.server.json",
     "start": "node --import tsx/esm server/index.ts",
     "preview": "vite preview --host",
+    "start:frontend": "npm run build && npm run preview",
     "setup-db": "tsx server/db/setup.ts"
   },
   "dependencies": {
