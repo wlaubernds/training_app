@@ -25,7 +25,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://workout-tracker-web-production-0e1e.up.railway.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Authentication middleware - extracts user from JWT token
