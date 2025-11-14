@@ -16,6 +16,10 @@ export default defineConfig({
     port: 4173,
     host: true,
     strictPort: true,
+    allowedHosts: [
+      'workout-tracker-web-production-0e1e.up.railway.app',
+      '.railway.app',
+    ],
   },
 })
 
