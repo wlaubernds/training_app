@@ -5,7 +5,6 @@ import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { Checkbox } from '../components/ui/checkbox';
 import type { Workout, WorkoutSession, ExerciseSession } from '../types';
 
 interface WorkoutTrackerProps {
@@ -31,7 +30,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
           setNumber: i + 1,
           weight: undefined,
           reps: undefined,
-          completed: false
+          completed: false // Auto-set based on data entry
         })),
         notes: ''
       }));
@@ -39,7 +38,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
     }
   }, [selectedDate, workout.exercises, sessions]);
 
-  const updateSet = (exerciseId: string, setNumber: number, field: 'weight' | 'reps' | 'completed', value: any) => {
+  const updateSet = (exerciseId: string, setNumber: number, field: 'weight' | 'reps', value: any) => {
     setSessionData(prev => {
       const updated = [...prev];
       const exerciseIndex = updated.findIndex(e => e.exerciseId === exerciseId);
@@ -49,10 +48,16 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
       const setIndex = updated[exerciseIndex].sets.findIndex(s => s.setNumber === setNumber);
       if (setIndex === -1) return prev;
       
-      updated[exerciseIndex].sets[setIndex] = {
-        ...updated[exerciseIndex].sets[setIndex],
+      const currentSet = updated[exerciseIndex].sets[setIndex];
+      const updatedSet = {
+        ...currentSet,
         [field]: value
       };
+      
+      // Auto-mark as completed if weight OR reps are entered
+      updatedSet.completed = !!(updatedSet.weight || updatedSet.reps);
+      
+      updated[exerciseIndex].sets[setIndex] = updatedSet;
       
       return updated;
     });
@@ -167,9 +172,8 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                       </div>
 
                       <div className="space-y-2 mb-3">
-                        <div className="grid grid-cols-12 gap-2 text-sm text-muted-foreground px-2">
+                        <div className="grid grid-cols-11 gap-2 text-sm text-muted-foreground px-2">
                           <div className="col-span-1">Set</div>
-                          <div className="col-span-1"></div>
                           <div className="col-span-3">Weight (lbs)</div>
                           <div className="col-span-3">Reps</div>
                           {previousData && <div className="col-span-4">Previous</div>}
@@ -179,16 +183,8 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                           const prevSet = previousData?.sets.find(s => s.setNumber === set.setNumber);
                           
                           return (
-                            <div key={set.setNumber} className="grid grid-cols-12 gap-2 items-center">
-                              <div className="col-span-1 text-center">{set.setNumber}</div>
-                              <div className="col-span-1 flex justify-center">
-                                <Checkbox
-                                  checked={set.completed}
-                                  onCheckedChange={(checked) => 
-                                    updateSet(exercise.id, set.setNumber, 'completed', checked)
-                                  }
-                                />
-                              </div>
+                            <div key={set.setNumber} className="grid grid-cols-11 gap-2 items-center">
+                              <div className="col-span-1 text-center font-medium">{set.setNumber}</div>
                               <div className="col-span-3">
                                 <Input
                                   type="number"
