@@ -52,6 +52,10 @@ Quick options:
 - **pdf-parse** for PDF extraction
 - **multer** for file uploads
 
+### Deployment
+- **Railway** - Hosting for both frontend and backend (free tier)
+- **Supabase** - Cloud PostgreSQL database with Row-Level Security
+
 ## 🚀 Getting Started
 
 ### Prerequisites
