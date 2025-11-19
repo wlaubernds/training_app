@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Copy } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -71,6 +71,33 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
       if (exerciseIndex === -1) return prev;
       
       updated[exerciseIndex].notes = notes;
+      return updated;
+    });
+  };
+
+  const copySetDown = (exerciseId: string, setNumber: number) => {
+    setSessionData(prev => {
+      const updated = [...prev];
+      const exerciseIndex = updated.findIndex(e => e.exerciseId === exerciseId);
+      
+      if (exerciseIndex === -1) return prev;
+      
+      const sourceSet = updated[exerciseIndex].sets.find(s => s.setNumber === setNumber);
+      if (!sourceSet) return prev;
+      
+      // Copy weight and reps to all sets below this one
+      updated[exerciseIndex].sets = updated[exerciseIndex].sets.map(set => {
+        if (set.setNumber > setNumber) {
+          return {
+            ...set,
+            weight: sourceSet.weight,
+            reps: sourceSet.reps,
+            completed: !!(sourceSet.weight || sourceSet.reps)
+          };
+        }
+        return set;
+      });
+      
       return updated;
     });
   };
@@ -172,18 +199,21 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                       </div>
 
                       <div className="space-y-2 mb-3">
-                        <div className="grid grid-cols-11 gap-2 text-sm text-muted-foreground px-2">
+                        <div className="grid grid-cols-12 gap-2 text-sm text-muted-foreground px-2">
                           <div className="col-span-1">Set</div>
                           <div className="col-span-3">Weight (lbs)</div>
                           <div className="col-span-3">Reps</div>
+                          <div className="col-span-1"></div>
                           {previousData && <div className="col-span-4">Previous</div>}
                         </div>
 
-                        {exerciseSessionData?.sets.map((set) => {
+                        {exerciseSessionData?.sets.map((set, index) => {
                           const prevSet = previousData?.sets.find(s => s.setNumber === set.setNumber);
+                          const isLastSet = index === exerciseSessionData.sets.length - 1;
+                          const hasData = !!(set.weight || set.reps);
                           
                           return (
-                            <div key={set.setNumber} className="grid grid-cols-11 gap-2 items-center">
+                            <div key={set.setNumber} className="grid grid-cols-12 gap-2 items-center">
                               <div className="col-span-1 text-center font-medium">{set.setNumber}</div>
                               <div className="col-span-3">
                                 <Input
@@ -204,6 +234,19 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                                     updateSet(exercise.id, set.setNumber, 'reps', parseInt(e.target.value) || undefined)
                                   }
                                 />
+                              </div>
+                              <div className="col-span-1 flex justify-center">
+                                {!isLastSet && hasData && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => copySetDown(exercise.id, set.setNumber)}
+                                    title="Copy to sets below"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                               {previousData && (
                                 <div className="col-span-4 text-sm text-muted-foreground">
