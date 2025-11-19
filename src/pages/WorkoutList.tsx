@@ -3,11 +3,13 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Progress } from '../components/ui/progress';
 import { useState, useMemo } from 'react';
-import type { Workout } from '../types';
+import type { Workout, WorkoutSession } from '../types';
 
 interface WorkoutListProps {
   workouts: Workout[];
+  sessions: WorkoutSession[];
   onSelectWorkout: (workout: Workout) => void;
   onDeleteWorkout: (workoutId: string) => void;
   onEditWorkout: (workout: Workout) => void;
@@ -15,7 +17,7 @@ interface WorkoutListProps {
   onUploadPDF: (file: File) => Promise<void>;
 }
 
-export function WorkoutList({ workouts, onSelectWorkout, onDeleteWorkout, onEditWorkout, onCreateWorkout, onUploadPDF }: WorkoutListProps) {
+export function WorkoutList({ workouts, sessions, onSelectWorkout, onDeleteWorkout, onEditWorkout, onCreateWorkout, onUploadPDF }: WorkoutListProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<string>('all');
   const [selectedPhase, setSelectedPhase] = useState<string>('all');
@@ -65,6 +67,44 @@ export function WorkoutList({ workouts, onSelectWorkout, onDeleteWorkout, onEdit
       'SUNDAY': 6
     };
     return dayMap[day] ?? 999;
+  };
+
+  // Helper function to calculate workout progress
+  const getWorkoutProgress = (workout: Workout) => {
+    // Get the most recent session for this workout
+    const workoutSessions = sessions
+      .filter(s => s.workoutId === workout.id)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    
+    if (workoutSessions.length === 0) {
+      return { completed: 0, total: workout.exercises.length, percentage: 0, lastSessionDate: null };
+    }
+
+    const latestSession = workoutSessions[0];
+    let completedExercises = 0;
+
+    // For each exercise, check if all sets have both weight and reps
+    workout.exercises.forEach(exercise => {
+      const exerciseSession = latestSession.sessionData.find(
+        s => s.exerciseId === exercise.id
+      );
+
+      if (!exerciseSession) return;
+
+      // Check if all sets are completed (have both weight and reps defined)
+      const allSetsComplete = exerciseSession.sets.every(
+        set => set.weight !== undefined || set.reps !== undefined
+      );
+
+      if (allSetsComplete && exerciseSession.sets.length > 0) {
+        completedExercises++;
+      }
+    });
+
+    const total = workout.exercises.length;
+    const percentage = total > 0 ? Math.round((completedExercises / total) * 100) : 0;
+
+    return { completed: completedExercises, total, percentage, lastSessionDate: latestSession.date };
   };
 
   // Group workouts by week
@@ -258,57 +298,68 @@ export function WorkoutList({ workouts, onSelectWorkout, onDeleteWorkout, onEdit
                 )}
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {weekWorkouts.map((workout) => (
-                  <Card 
-                    key={workout.id} 
-                    className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
-                    onClick={() => onSelectWorkout(workout)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
-                        {workout.workoutDay && (
-                          <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
-                        )}
+                {weekWorkouts.map((workout) => {
+                  const progress = getWorkoutProgress(workout);
+                  
+                  return (
+                    <Card 
+                      key={workout.id} 
+                      className="p-4 hover:shadow-lg transition-shadow cursor-pointer group"
+                      onClick={() => onSelectWorkout(workout)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
+                          {workout.workoutDay && (
+                            <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditWorkout(workout);
+                            }}
+                          >
+                            <Edit className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteWorkout(workout.id);
+                            }}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditWorkout(workout);
-                          }}
-                        >
-                          <Edit className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteWorkout(workout.id);
-                          }}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {progress.completed}/{progress.total} exercises
+                          </span>
+                          <span className="font-medium">{progress.percentage}%</span>
+                        </div>
+                        <Progress value={progress.percentage} />
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="size-3" />
+                          <span>
+                            {progress.lastSessionDate 
+                              ? new Date(progress.lastSessionDate).toLocaleDateString()
+                              : 'Not started yet'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Dumbbell className="size-4" />
-                        <span>{workout.exercises.length} exercises</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="size-4" />
-                        <span>{new Date(workout.uploadDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}

@@ -14,6 +14,7 @@ import {
   insertExercise,
   insertWorkoutSession,
   getWorkoutSessionsByWorkoutId,
+  getAllWorkoutSessions,
   supabase,
 } from './db/supabase.js';
 import { parsePDF } from './utils/pdfParser.js';
@@ -270,6 +271,18 @@ app.post('/api/workouts/upload', authenticateUser, upload.single('pdf'), async (
       error: 'Failed to process PDF', 
       details: error instanceof Error ? error.message : 'Unknown error' 
     });
+  }
+});
+
+// Get all workout sessions for a user (protected route)
+app.get('/api/sessions', authenticateUser, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const sessions = await getAllWorkoutSessions(userId);
+    res.json(sessions);
+  } catch (error) {
+    console.error('Error fetching all sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch sessions' });
   }
 });
 

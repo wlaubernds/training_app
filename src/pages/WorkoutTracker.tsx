@@ -54,8 +54,8 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
         [field]: value
       };
       
-      // Auto-mark as completed if weight OR reps are entered
-      updatedSet.completed = !!(updatedSet.weight || updatedSet.reps);
+      // Auto-mark as completed if weight OR reps are entered (including 0)
+      updatedSet.completed = updatedSet.weight !== undefined || updatedSet.reps !== undefined;
       
       updated[exerciseIndex].sets[setIndex] = updatedSet;
       
@@ -92,7 +92,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
             ...set,
             weight: sourceSet.weight,
             reps: sourceSet.reps,
-            completed: !!(sourceSet.weight || sourceSet.reps)
+            completed: sourceSet.weight !== undefined || sourceSet.reps !== undefined
           };
         }
         return set;
@@ -210,7 +210,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                         {exerciseSessionData?.sets.map((set, index) => {
                           const prevSet = previousData?.sets.find(s => s.setNumber === set.setNumber);
                           const isLastSet = index === exerciseSessionData.sets.length - 1;
-                          const hasData = !!(set.weight || set.reps);
+                          const hasData = set.weight !== undefined || set.reps !== undefined;
                           
                           return (
                             <div key={set.setNumber} className="grid grid-cols-12 gap-2 items-center">
@@ -219,20 +219,24 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
                                 <Input
                                   type="number"
                                   placeholder="Weight"
-                                  value={set.weight || ''}
-                                  onChange={(e) => 
-                                    updateSet(exercise.id, set.setNumber, 'weight', parseFloat(e.target.value) || undefined)
-                                  }
+                                  value={set.weight ?? ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                    updateSet(exercise.id, set.setNumber, 'weight', value);
+                                  }}
+                                  className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                                 />
                               </div>
                               <div className="col-span-3">
                                 <Input
                                   type="number"
                                   placeholder="Reps"
-                                  value={set.reps || ''}
-                                  onChange={(e) => 
-                                    updateSet(exercise.id, set.setNumber, 'reps', parseInt(e.target.value) || undefined)
-                                  }
+                                  value={set.reps ?? ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                    updateSet(exercise.id, set.setNumber, 'reps', value);
+                                  }}
+                                  className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                                 />
                               </div>
                               <div className="col-span-1 flex justify-center">

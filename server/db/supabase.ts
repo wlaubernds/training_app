@@ -193,6 +193,27 @@ export async function insertWorkoutSession(session: WorkoutSession, userId: stri
   return data;
 }
 
+export async function getAllWorkoutSessions(userId: string): Promise<WorkoutSession[]> {
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching workout sessions:', error);
+    return [];
+  }
+
+  return data.map(row => ({
+    id: row.id,
+    workoutId: row.workout_id,
+    date: row.date,
+    sessionData: JSON.parse(row.session_data),
+    createdAt: row.created_at,
+  }));
+}
+
 export async function getWorkoutSessionsByWorkoutId(workoutId: string, userId: string): Promise<WorkoutSession[]> {
   const { data, error } = await supabase
     .from('workout_sessions')

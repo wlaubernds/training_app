@@ -41,6 +41,7 @@ export default function App() {
   useEffect(() => {
     if (user) {
       loadWorkouts();
+      loadAllSessions();
     }
   }, [user]);
 
@@ -93,6 +94,22 @@ export default function App() {
       toast.error('Failed to load workouts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllSessions = async () => {
+    if (!user) return;
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${config.apiUrl}/sessions`, { headers });
+      if (!response.ok) throw new Error('Failed to load sessions');
+      
+      const data = await response.json();
+      setSessions(data);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+      toast.error('Failed to load sessions');
     }
   };
 
@@ -222,6 +239,7 @@ export default function App() {
 
       toast.success('Session saved!');
       await loadSessions(selectedWorkout.id);
+      await loadAllSessions();
     } catch (error) {
       console.error('Error saving session:', error);
       toast.error('Failed to save session');
@@ -282,6 +300,7 @@ export default function App() {
         {view === 'list' && (
           <WorkoutList
             workouts={workouts}
+            sessions={sessions}
             onSelectWorkout={handleSelectWorkout}
             onDeleteWorkout={handleDeleteWorkout}
             onEditWorkout={handleEditWorkout}
