@@ -45,11 +45,8 @@ export default function App() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (selectedWorkout && user) {
-      loadSessions(selectedWorkout.id);
-    }
-  }, [selectedWorkout, user]);
+  // Note: We don't need to load workout-specific sessions anymore
+  // The WorkoutTracker filters from the all sessions we already have loaded
 
   const checkAuth = async () => {
     try {
@@ -238,8 +235,10 @@ export default function App() {
       if (!response.ok) throw new Error('Failed to save session');
 
       toast.success('Session saved!');
-      await loadSessions(selectedWorkout.id);
+      // Load all sessions to update both tracker and list views
       await loadAllSessions();
+      // Navigate back to the list view
+      setView('list');
     } catch (error) {
       console.error('Error saving session:', error);
       toast.error('Failed to save session');
