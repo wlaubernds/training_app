@@ -4,6 +4,7 @@ import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
+import { WeeklySummary } from '../components/WeeklySummary';
 import { useState, useMemo } from 'react';
 import type { Workout, WorkoutSession } from '../types';
 
@@ -297,6 +298,10 @@ export function WorkoutList({ workouts, sessions, onSelectWorkout, onDeleteWorko
                   </p>
                 )}
               </div>
+              
+              {/* Weekly Summary */}
+              <WeeklySummary week={week} workouts={weekWorkouts} sessions={sessions} />
+              
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {weekWorkouts.map((workout) => {
                   const progress = getWorkoutProgress(workout);

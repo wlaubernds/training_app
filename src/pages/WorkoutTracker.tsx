@@ -19,7 +19,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
   const [sessionData, setSessionData] = useState<ExerciseSession[]>([]);
 
   useEffect(() => {
-    const existingSession = sessions.find(s => s.date === selectedDate);
+    const existingSession = sessions.find(s => s.workoutId === workout.id && s.date === selectedDate);
     
     if (existingSession) {
       setSessionData(existingSession.sessionData);
@@ -36,7 +36,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
       }));
       setSessionData(emptyData);
     }
-  }, [selectedDate, workout.exercises, sessions]);
+  }, [selectedDate, workout.exercises, workout.id, sessions]);
 
   const updateSet = (exerciseId: string, setNumber: number, field: 'weight' | 'reps', value: any) => {
     setSessionData(prev => {
@@ -108,7 +108,7 @@ export function WorkoutTracker({ workout, sessions, onBack, onSaveSession }: Wor
 
   const getPreviousSessionData = (exerciseId: string) => {
     const sortedSessions = [...sessions]
-      .filter(s => s.date < selectedDate)
+      .filter(s => s.workoutId === workout.id && s.date < selectedDate)
       .sort((a, b) => b.date.localeCompare(a.date));
     
     if (sortedSessions.length === 0) return null;
