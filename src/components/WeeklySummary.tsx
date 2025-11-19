@@ -1,6 +1,5 @@
 import { TrendingUp, Dumbbell, Calendar, Target, Activity } from 'lucide-react';
 import { Card } from './ui/card';
-import { Progress } from './ui/progress';
 import type { Workout, WorkoutSession } from '../types';
 
 interface WeeklySummaryProps {

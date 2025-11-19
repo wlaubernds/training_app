@@ -110,22 +110,6 @@ export default function App() {
     }
   };
 
-  const loadSessions = async (workoutId: string) => {
-    if (!user) return;
-    
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${config.apiUrl}/workouts/${workoutId}/sessions`, { headers });
-      if (!response.ok) throw new Error('Failed to load sessions');
-      
-      const data = await response.json();
-      setSessions(data);
-    } catch (error) {
-      console.error('Error loading sessions:', error);
-      toast.error('Failed to load sessions');
-    }
-  };
-
   const handleSelectWorkout = (workout: Workout) => {
     setSelectedWorkout(workout);
     setView('tracker');
