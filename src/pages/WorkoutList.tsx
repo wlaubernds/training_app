@@ -1,4 +1,4 @@
-import { Calendar, Dumbbell, Trash2, Plus, Edit, Upload } from 'lucide-react';
+import { Calendar, Dumbbell, Trash2, Plus, Edit, Upload, Award } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -314,9 +314,31 @@ export function WorkoutList({ workouts, sessions, onSelectWorkout, onDeleteWorko
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
-                          {workout.workoutDay && (
-                            <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                          {workout.isChallenge && (
+                            <div className="flex items-center gap-1 mb-1">
+                              <Award className="size-4 text-amber-500" />
+                              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                                Challenge Week
+                              </span>
+                            </div>
+                          )}
+                          {workout.workoutTitle ? (
+                            <>
+                              <h3 className="mb-1 text-lg font-bold">{workout.workoutTitle}</h3>
+                              {workout.workoutDay && (
+                                <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
+                              {workout.workoutDay && (
+                                <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                              )}
+                            </>
+                          )}
+                          {workout.timeCap && (
+                            <p className="text-muted-foreground text-xs mt-1">⏱️ Time Cap: {workout.timeCap}</p>
                           )}
                         </div>
                         <div className="flex gap-1">

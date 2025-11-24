@@ -303,6 +303,7 @@ export default function App() {
         {view === 'tracker' && selectedWorkout && (
           <WorkoutTracker
             workout={selectedWorkout}
+            workouts={workouts}
             sessions={sessions}
             onBack={() => setView('list')}
             onSaveSession={handleSaveSession}
