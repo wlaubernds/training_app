@@ -220,28 +220,36 @@ export function WorkoutTracker({ workout, workouts, sessions, onBack, onSaveSess
                 </span>
               </div>
             )}
-            {workout.workoutTitle && (
-              <h1 className="text-2xl font-bold mb-2">{workout.workoutTitle}</h1>
+            {workout.workoutTitle ? (
+              <>
+                <h1 className="text-2xl font-bold mb-2">{workout.workoutTitle}</h1>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  {workout.workoutDay && <span className="font-medium">{workout.workoutDay}</span>}
+                  {workout.week && <span>{workout.week}</span>}
+                </div>
+              </>
+            ) : (
+              <h2>
+                {workout.workoutName || workout.fileName}
+                {workout.week && (
+                  <span className="ml-3 text-muted-foreground font-normal">{workout.week}</span>
+                )}
+              </h2>
             )}
-            <h2>
-              {workout.workoutName || workout.fileName}
-              {workout.week && (
-                <span className="ml-3 text-muted-foreground font-normal">{workout.week}</span>
-              )}
-            </h2>
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-              {workout.workoutDay && <span>{workout.workoutDay}</span>}
-              {workout.timeCap && (
-                <span className="flex items-center gap-1">
-                  ⏱️ Time Cap: {workout.timeCap}
-                </span>
-              )}
-              {workout.scoringType && (
-                <span className="flex items-center gap-1">
-                  📊 Score: {workout.scoringType}
-                </span>
-              )}
-            </div>
+            {(workout.timeCap || workout.scoringType) && (
+              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                {workout.timeCap && (
+                  <span className="flex items-center gap-1">
+                    ⏱️ Time Cap: {workout.timeCap}
+                  </span>
+                )}
+                {workout.scoringType && (
+                  <span className="flex items-center gap-1">
+                    📊 Score: {workout.scoringType}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <Label htmlFor="session-date">Session Date</Label>

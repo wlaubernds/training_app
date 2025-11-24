@@ -322,12 +322,20 @@ export function WorkoutList({ workouts, sessions, onSelectWorkout, onDeleteWorko
                               </span>
                             </div>
                           )}
-                          {workout.workoutTitle && (
-                            <h3 className="mb-1 text-lg font-bold">{workout.workoutTitle}</h3>
-                          )}
-                          <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
-                          {workout.workoutDay && (
-                            <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                          {workout.workoutTitle ? (
+                            <>
+                              <h3 className="mb-1 text-lg font-bold">{workout.workoutTitle}</h3>
+                              {workout.workoutDay && (
+                                <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <h4 className="mb-1">{workout.workoutName || workout.fileName}</h4>
+                              {workout.workoutDay && (
+                                <p className="text-muted-foreground text-sm">{workout.workoutDay}</p>
+                              )}
+                            </>
                           )}
                           {workout.timeCap && (
                             <p className="text-muted-foreground text-xs mt-1">⏱️ Time Cap: {workout.timeCap}</p>

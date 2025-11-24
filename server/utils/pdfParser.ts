@@ -84,7 +84,7 @@ function parseWorkoutsFromText(text: string, filePath: string): Workout[] {
         phase, 
         week, 
         filePath, 
-        undefined,
+        dayName, // Use day name as workoutName for challenge weeks
         dayName,
         true,
         workoutTitle,
