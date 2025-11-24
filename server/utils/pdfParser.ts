@@ -23,12 +23,26 @@ export async function parsePDF(filePath: string): Promise<Workout[]> {
 function parseWorkoutsFromText(text: string, filePath: string): Workout[] {
   const workouts: Workout[] = [];
   
-  // Extract program, phase, and week metadata from lines like "GYM DAILY - IN SEASON WEEK 11"
-  const metadataMatch = text.match(/([A-Z\s]+?)\s*-\s*([A-Z\s]+?)\s+WEEK\s+(\d+)/i);
+  // Check if this is a challenge week by looking for "CHALLENGE WEEK"
+  const isChallengeWeek = /CHALLENGE\s+WEEK/i.test(text);
   
-  const program = metadataMatch ? metadataMatch[1].trim() : undefined;
-  const phase = metadataMatch ? metadataMatch[2].trim() : undefined;
-  const week = metadataMatch ? `Week ${metadataMatch[3]}` : undefined;
+  let program: string | undefined;
+  let phase: string | undefined;
+  let week: string | undefined;
+  
+  if (isChallengeWeek) {
+    // Extract metadata for challenge weeks: "GYM DAILY - CHALLENGE WEEK 11/24"
+    const challengeMetadataMatch = text.match(/([A-Z\s]+?)\s*-\s*CHALLENGE\s+WEEK\s+([\d\/\-]+)/i);
+    program = challengeMetadataMatch ? challengeMetadataMatch[1].trim() : undefined;
+    phase = 'Challenge Week';
+    week = challengeMetadataMatch ? challengeMetadataMatch[2] : undefined;
+  } else {
+    // Extract program, phase, and week metadata from lines like "GYM DAILY - IN SEASON WEEK 11"
+    const metadataMatch = text.match(/([A-Z\s]+?)\s*-\s*([A-Z\s]+?)\s+WEEK\s+(\d+)/i);
+    program = metadataMatch ? metadataMatch[1].trim() : undefined;
+    phase = metadataMatch ? metadataMatch[2].trim() : undefined;
+    week = metadataMatch ? `Week ${metadataMatch[3]}` : undefined;
+  }
 
   // Split by workout days with format like "MONDAY (Hinge/Push)" or "TUESDAY ( Sprint Conditioning)"
   const dayPattern = /(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\s*\(([^)]+)\)/gi;
@@ -36,7 +50,52 @@ function parseWorkoutsFromText(text: string, filePath: string): Workout[] {
 
   console.log(`Found ${dayMatches.length} workout days`);
 
-  if (dayMatches.length === 0) {
+  if (dayMatches.length === 0 && isChallengeWeek) {
+    // Challenge week format - days without parentheses
+    const challengeDayPattern = /(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\s*(?:<br>|\n)/gi;
+    const challengeDayMatches = Array.from(text.matchAll(challengeDayPattern));
+    
+    console.log(`Found ${challengeDayMatches.length} challenge workout days`);
+    
+    for (let i = 0; i < challengeDayMatches.length; i++) {
+      const dayMatch = challengeDayMatches[i];
+      const dayName = dayMatch[1]; // e.g., "MONDAY"
+      
+      // Extract text for this workout (from this day to the next day)
+      const startIndex = dayMatch.index!;
+      const endIndex = i < challengeDayMatches.length - 1 ? challengeDayMatches[i + 1].index! : text.length;
+      const workoutText = text.substring(startIndex, endIndex);
+      
+      // Extract workout title (e.g., "DEADFALL", "DRAINAGE")
+      const titleMatch = workoutText.match(/[""]([A-Z\s]+)[""](?:\s*BLOCK|\s*BUY-IN|\s*30)/i);
+      const workoutTitle = titleMatch ? titleMatch[1].trim() : undefined;
+      
+      // Extract time cap if present
+      const timeCapMatch = workoutText.match(/(\d+)\s*[Mm]inute[s]?\s+(?:time\s+)?cap/i);
+      const timeCap = timeCapMatch ? `${timeCapMatch[1]} minutes` : undefined;
+      
+      // Extract scoring type
+      const scoringMatch = workoutText.match(/Score\s*[=:]\s*([^\n]+)/i);
+      const scoringType = scoringMatch ? scoringMatch[1].trim() : undefined;
+      
+      const workout = parseSingleWorkout(
+        workoutText, 
+        program, 
+        phase, 
+        week, 
+        filePath, 
+        undefined,
+        dayName,
+        true,
+        workoutTitle,
+        timeCap,
+        scoringType
+      );
+      if (workout.exercises.length > 0) {
+        workouts.push(workout);
+      }
+    }
+  } else if (dayMatches.length === 0) {
     // If no day markers found, create a single workout
     const workout = parseSingleWorkout(text, program, phase, week, filePath);
     if (workout.exercises.length > 0) {
@@ -71,7 +130,11 @@ function parseSingleWorkout(
   week?: string,
   filePath?: string,
   workoutName?: string,
-  workoutDay?: string
+  workoutDay?: string,
+  isChallenge?: boolean,
+  workoutTitle?: string,
+  timeCap?: string,
+  scoringType?: string
 ): Workout {
   const workoutId = `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const exercises: Exercise[] = [];
@@ -117,7 +180,11 @@ function parseSingleWorkout(
     phase,
     week,
     equipment,
-    exercises
+    exercises,
+    isChallenge,
+    workoutTitle,
+    timeCap,
+    scoringType
   };
 
   return workout;

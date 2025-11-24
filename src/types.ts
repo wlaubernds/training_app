@@ -21,6 +21,10 @@ export interface Workout {
   program?: string; // e.g., "Gym daily"
   phase?: string; // e.g., "In season"
   week?: string; // e.g., "Week 11"
+  isChallenge?: boolean; // Flag for challenge weeks
+  workoutTitle?: string; // Named workout for challenges (e.g., "DEADFALL", "DRAINAGE")
+  timeCap?: string; // Time cap for the workout (e.g., "30 minutes")
+  scoringType?: string; // How the workout is scored (e.g., "Time", "Rounds + Reps", "Distance")
 }
 
 // Set data for tracking

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Save, ArrowLeft, Edit, X } from 'lucide-react';
+import { Plus, Save, ArrowLeft, Edit, X, Award } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import type { Workout, Exercise } from '../types';
 
@@ -24,6 +25,10 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
   const [newEquipmentItem, setNewEquipmentItem] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>(workout?.exercises || []);
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
+  const [isChallenge, setIsChallenge] = useState(workout?.isChallenge || false);
+  const [workoutTitle, setWorkoutTitle] = useState(workout?.workoutTitle || '');
+  const [timeCap, setTimeCap] = useState(workout?.timeCap || '');
+  const [scoringType, setScoringType] = useState(workout?.scoringType || '');
   
   const [newExercise, setNewExercise] = useState({
     name: '',
@@ -41,6 +46,10 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
       setPhase(workout.phase || '');
       setWeek(workout.week || '');
       setEquipment(workout.equipment || []);
+      setIsChallenge(workout.isChallenge || false);
+      setWorkoutTitle(workout.workoutTitle || '');
+      setTimeCap(workout.timeCap || '');
+      setScoringType(workout.scoringType || '');
       const exercisesWithIds = (workout.exercises || []).map((ex, index) => ({
         ...ex,
         id: ex.id || `ex_${workout.id}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`
@@ -128,7 +137,11 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
       phase,
       week,
       equipment,
-      exercises
+      exercises,
+      isChallenge: isChallenge || undefined,
+      workoutTitle: workoutTitle || undefined,
+      timeCap: timeCap || undefined,
+      scoringType: scoringType || undefined
     };
 
     onSave(updatedWorkout);
@@ -204,6 +217,57 @@ export function WorkoutBuilder({ workout, onSave, onBack }: WorkoutBuilderProps)
               value={week}
               onChange={(e) => setWeek(e.target.value)}
             />
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Checkbox 
+                id="is-challenge"
+                checked={isChallenge}
+                onCheckedChange={(checked) => setIsChallenge(checked === true)}
+              />
+              <Label htmlFor="is-challenge" className="flex items-center gap-2 cursor-pointer">
+                <Award className="size-4 text-amber-500" />
+                <span>Challenge Week Workout</span>
+              </Label>
+            </div>
+
+            {isChallenge && (
+              <div className="space-y-4 pl-6 border-l-2 border-amber-500">
+                <div>
+                  <Label htmlFor="workout-title">Workout Title</Label>
+                  <Input
+                    id="workout-title"
+                    placeholder="e.g., DEADFALL, DRAINAGE"
+                    maxLength={100}
+                    value={workoutTitle}
+                    onChange={(e) => setWorkoutTitle(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="time-cap">Time Cap</Label>
+                  <Input
+                    id="time-cap"
+                    placeholder="e.g., 30 minutes"
+                    maxLength={50}
+                    value={timeCap}
+                    onChange={(e) => setTimeCap(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="scoring-type">Scoring Type</Label>
+                  <Input
+                    id="scoring-type"
+                    placeholder="e.g., Time, Rounds + Reps, Distance"
+                    maxLength={100}
+                    value={scoringType}
+                    onChange={(e) => setScoringType(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
